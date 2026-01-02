@@ -28,6 +28,7 @@ export interface VisualizerConfig {
   sensitivity: number;
   glowAmount: number;
   speed: number;
+  backgroundSpeed: number;
   scale: number;
   complexity: number;
   showTimer: boolean;

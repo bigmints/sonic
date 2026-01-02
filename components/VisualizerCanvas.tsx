@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'https://esm.sh/three';
 import { VisualizerConfig, ForegroundStyle, BackgroundStyle } from '../types';
@@ -28,6 +29,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const threeRef = useRef<{
     scene: THREE.Scene;
@@ -58,7 +60,10 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
 
     const updateTime = () => setCurrentTime(audio.currentTime);
     const updateDuration = () => setDuration(audio.duration);
-    const onPlay = () => setIsPlaying(true);
+    const onPlay = () => {
+      setIsPlaying(true);
+      setHasInteracted(true);
+    };
     const onPause = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', updateTime);
@@ -363,7 +368,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
           if (config.backgroundStyle === BackgroundStyle.HYPER_TUNNEL || config.backgroundStyle === BackgroundStyle.STAR_FIELD) {
             const speedMult = config.backgroundStyle === BackgroundStyle.STAR_FIELD ? 50 : 25;
             for (let i = 0; i < posArr.length / 3; i++) {
-              posArr[i*3+2] += speedMult + (thump * 180) + (config.speed * 40);
+              posArr[i*3+2] += (speedMult + (thump * 180) + (config.backgroundSpeed * 40)) * (config.backgroundSpeed * 2);
               if (posArr[i*3+2] > 3000) {
                 posArr[i*3+2] = -25000;
                 posArr[i*3] = (Math.random() - 0.5) * 10000;
@@ -379,12 +384,12 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               const newAngle = angle + (0.01 + thump * 0.05) * (1000 / dist);
               posArr[i*3] = Math.cos(newAngle) * dist;
               posArr[i*3+1] = Math.sin(newAngle) * dist;
-              posArr[i*3+2] += (5 + thump * 100) * config.speed;
+              posArr[i*3+2] += (5 + thump * 100) * config.backgroundSpeed;
               if (posArr[i*3+2] > 10000) posArr[i*3+2] = -10000;
             }
           } else {
-             bgGroup.rotation.y += 0.0007 * config.speed;
-             bgGroup.rotation.x += 0.0004 * config.speed;
+             bgGroup.rotation.y += 0.0007 * config.backgroundSpeed;
+             bgGroup.rotation.x += 0.0004 * config.backgroundSpeed;
           }
           bgPoints.geometry.attributes.position.needsUpdate = true;
           bgPoints.material.opacity = 0.5 + thump * 0.5;
@@ -510,6 +515,21 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       <canvas ref={hudCanvasRef} className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none" />
       <audio ref={audioRef} src={audioUrl || undefined} crossOrigin="anonymous" />
       
+      {/* Start Playback Overlay */}
+      {audioUrl && !hasInteracted && !isRecording && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-[60] animate-in fade-in duration-700">
+           <button 
+             onClick={togglePlay}
+             className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all group/playbtn"
+           >
+             <svg className="w-10 h-10 text-black ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+               <path d="M8 5v14l11-7z"/>
+             </svg>
+           </button>
+           <div className="mt-8 text-white/50 text-[10px] font-black tracking-[0.4em] uppercase">Start Sonic Session</div>
+        </div>
+      )}
+
       {audioUrl && !isRecording && (
         <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 pt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
           {/* Progress Bar */}
