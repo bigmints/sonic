@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import * as THREE from 'https://esm.sh/three';
-import { VisualizerConfig, ForegroundStyle, BackgroundStyle } from '../types';
+import { VisualizerConfig, ForegroundStyle, BackgroundStyle, TimerLocation } from '../types';
 
 interface Props {
   audioUrl: string | null;
@@ -279,47 +279,26 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               posArr[i*3+2] = Math.sin(time * 3 + i * 0.04) * (thump * 150);
             }
             fgPoints.material.size = (config.foregroundStyle === ForegroundStyle.SONIC_SPIRAL ? 10 : 15 + thump * 20) * config.scale;
-          } else if (config.foregroundStyle === ForegroundStyle.COSMIC_MANDALA) {
+          } else if (config.foregroundStyle === ForegroundStyle.COSMIC_MANDALA || config.foregroundStyle === ForegroundStyle.SONIC_BLOOM) {
             const petals = 12;
-            const layers = 6;
-            const pointsPerLayer = count / layers;
+            const ringCount = 8;
             for (let i = 0; i < count; i++) {
-              const layerIdx = Math.floor(i / pointsPerLayer);
-              const angle = (i % pointsPerLayer) / pointsPerLayer * Math.PI * 2 + time * config.speed * 0.2;
-              const bin = Math.floor((layerIdx / layers) * 256);
+              const ringIdx = Math.floor(i / (count / ringCount));
+              const angle = (i % (count / ringCount)) / (count / ringCount) * Math.PI * 2 + time * 0.2;
+              const bin = Math.floor(ringIdx / ringCount * 128);
               const amp = dataArray[bin] / 255 * 100 * config.sensitivity;
-              const baseR = (100 + layerIdx * 150) * config.scale;
-              const petalMod = Math.sin(petals * angle + time) * (50 + amp);
-              const r = baseR + petalMod + amp;
-              posArr[i*3] = Math.cos(angle) * r;
-              posArr[i*3+1] = Math.sin(angle) * r;
-              posArr[i*3+2] = Math.sin(time * 2 + angle * petals) * (thump * 80);
-            }
-            fgPoints.material.size = (10 + thump * 15) * config.scale;
-          } else if (config.foregroundStyle === ForegroundStyle.SONIC_BLOOM) {
-            const petalCount = 5;
-            const ringCount = 10;
-            const pointsPerRing = count / ringCount;
-            for (let i = 0; i < count; i++) {
-              const ringIdx = Math.floor(i / pointsPerRing);
-              const angle = (i % pointsPerRing) / pointsPerRing * Math.PI * 2;
-              const bin = Math.floor((ringIdx / ringCount) * 128);
-              const amp = dataArray[bin] / 255 * 150 * config.sensitivity;
-              const baseR = (50 + ringIdx * 80) * config.scale;
-              const wave = Math.sin(petalCount * angle + time * config.speed + ringIdx) * (20 + amp);
+              const baseR = (100 + ringIdx * 150) * config.scale;
+              const wave = Math.sin(petals * angle + time * config.speed) * (50 + amp);
               const r = baseR + wave + amp;
               posArr[i*3] = Math.cos(angle) * r;
               posArr[i*3+1] = Math.sin(angle) * r;
-              posArr[i*3+2] = Math.cos(time + ringIdx * 0.5) * (thump * 50);
+              posArr[i*3+2] = Math.sin(time * 2 + angle * petals) * (thump * 100);
             }
-            fgPoints.material.size = (8 + thump * 12) * config.scale;
           } else if (config.foregroundStyle === ForegroundStyle.PSY_MANDALA) {
-            const sym = 12;
             for (let i = 0; i < count; i++) {
               const angle = (i / count) * Math.PI * 2;
-              const bin = Math.floor((i % 128) / 128 * 256);
-              const amp = dataArray[bin] / 255 * 500 * config.sensitivity;
-              const r = (500 * config.scale + amp) + Math.sin(time * 2 + angle * sym) * 100;
+              const amp = dataArray[Math.floor((i % 128))] / 255 * 400 * config.sensitivity;
+              const r = (500 * config.scale + amp) + Math.sin(time * 2 + angle * 12) * 100;
               posArr[i*3] = Math.cos(angle) * r;
               posArr[i*3+1] = Math.sin(angle) * r;
               posArr[i*3+2] = Math.cos(time * 4 + i * 0.1) * (thump * 100);
@@ -329,8 +308,8 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               const helixIdx = i % 2;
               const angle = (i * 0.08) + time * config.speed + (helixIdx * Math.PI);
               const radius = 300 * config.scale + thump * 200;
-              posArr[i*3] = Math.cos(angle) * radius + Math.sin(i * 0.5) * 40;
-              posArr[i*3+1] = Math.sin(angle) * radius + Math.cos(i * 0.5) * 40;
+              posArr[i*3] = Math.cos(angle) * radius;
+              posArr[i*3+1] = Math.sin(angle) * radius;
               posArr[i*3+2] = (i - count / 2) * (8 * config.scale);
             }
           } else if (config.foregroundStyle === ForegroundStyle.CYBER_SPHERE) {
@@ -338,8 +317,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
             for (let i = 0; i < count; i++) {
               const phi = Math.acos(-1 + (2 * i) / count);
               const theta = Math.sqrt(count * Math.PI) * phi + time * config.speed * 0.2;
-              const bin = Math.floor((i % 256));
-              const amp = dataArray[bin] / 255 * 100 * config.sensitivity;
+              const amp = dataArray[i % 256] / 255 * 100 * config.sensitivity;
               const r = rBase + amp;
               posArr[i*3] = Math.sin(phi) * Math.cos(theta) * r;
               posArr[i*3+1] = Math.sin(phi) * Math.sin(theta) * r;
@@ -347,14 +325,12 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
             }
           } else if (config.foregroundStyle === ForegroundStyle.ORBITAL_RINGS) {
             const ringCount = 8;
-            const dotsPerRing = count / ringCount;
+            const dpr = count / ringCount;
             for (let i = 0; i < count; i++) {
-              const ringIndex = Math.floor(i / dotsPerRing);
-              const angle = (i % dotsPerRing) / dotsPerRing * Math.PI * 2 + time * config.speed * (0.5 + ringIndex * 0.1);
-              const bin = Math.floor(ringIndex / ringCount * 256);
-              const amp = dataArray[bin] / 255 * 150 * config.sensitivity;
-              const radius = (300 + ringIndex * 120 + amp) * config.scale;
-              const tilt = ringIndex * (Math.PI / ringCount) + time * 0.1 * config.rotationSpeed;
+              const ri = Math.floor(i / dpr);
+              const angle = (i % dpr) / dpr * Math.PI * 2 + time * config.speed * (0.5 + ri * 0.1);
+              const radius = (300 + ri * 120 + (dataArray[ri * 10] / 255 * 100)) * config.scale;
+              const tilt = ri * (Math.PI / ringCount) + time * 0.1 * config.rotationSpeed;
               posArr[i*3] = Math.cos(angle) * radius;
               posArr[i*3+1] = Math.sin(angle) * radius * Math.cos(tilt);
               posArr[i*3+2] = Math.sin(angle) * radius * Math.sin(tilt);
@@ -366,26 +342,11 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         if (bgPoints) {
           const posArr = bgPoints.geometry.attributes.position.array as Float32Array;
           if (config.backgroundStyle === BackgroundStyle.HYPER_TUNNEL || config.backgroundStyle === BackgroundStyle.STAR_FIELD) {
-            const speedMult = config.backgroundStyle === BackgroundStyle.STAR_FIELD ? 50 : 25;
             for (let i = 0; i < posArr.length / 3; i++) {
-              posArr[i*3+2] += (speedMult + (thump * 180) + (config.backgroundSpeed * 40)) * (config.backgroundSpeed * 2);
+              posArr[i*3+2] += (25 + (thump * 180)) * config.backgroundSpeed;
               if (posArr[i*3+2] > 3000) {
                 posArr[i*3+2] = -25000;
-                posArr[i*3] = (Math.random() - 0.5) * 10000;
-                posArr[i*3+1] = (Math.random() - 0.5) * 10000;
               }
-            }
-          } else if (config.backgroundStyle === BackgroundStyle.VORTEX_FLOW) {
-            for (let i = 0; i < posArr.length / 3; i++) {
-              const x = posArr[i*3];
-              const y = posArr[i*3+1];
-              const angle = Math.atan2(y, x);
-              const dist = Math.sqrt(x*x + y*y);
-              const newAngle = angle + (0.01 + thump * 0.05) * (1000 / dist);
-              posArr[i*3] = Math.cos(newAngle) * dist;
-              posArr[i*3+1] = Math.sin(newAngle) * dist;
-              posArr[i*3+2] += (5 + thump * 100) * config.backgroundSpeed;
-              if (posArr[i*3+2] > 10000) posArr[i*3+2] = -10000;
             }
           } else {
              bgGroup.rotation.y += 0.0007 * config.backgroundSpeed;
@@ -396,29 +357,108 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         }
 
         fgGroup.rotation.z += 0.003 * config.rotationSpeed;
-        camera.position.z = 2000 - (thump * 500);
-        camera.fov = 45 + (thump * 20);
+        camera.position.z = 2000 - (thump * 400);
+        camera.fov = 45 + (thump * 15);
         camera.updateProjectionMatrix();
       }
 
       renderer.render(scene, camera);
 
+      // --- ADVANCED HUD RENDERING ---
       if (hudCanvasRef.current) {
         const hCtx = hudCanvasRef.current.getContext('2d');
         if (hCtx) {
           hCtx.clearRect(0, 0, hudCanvasRef.current.width, hudCanvasRef.current.height);
-          if (config.showTimer) {
+          
+          if (config.showTimer || config.title || config.subtitle) {
             const timeStr = formatTime(audioRef.current?.currentTime || 0);
-            hCtx.save();
-            hCtx.font = `900 ${config.timerSize}px monospace`;
-            hCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            hCtx.textAlign = 'center';
-            hCtx.textBaseline = 'middle';
-            if (dataArray) {
-               hCtx.shadowBlur = (config.timerSize / 4) * (dataArray[0]/255);
-               hCtx.shadowColor = config.color;
+            const w = hudCanvasRef.current.width;
+            const h = hudCanvasRef.current.height;
+            const bassIntensity = dataArray ? dataArray[0] / 255 : 0;
+            
+            // Layout Setup
+            const padding = 200;
+            let anchorX = w / 2;
+            let anchorY = h / 2;
+            let align: CanvasTextAlign = 'center';
+            let baseline: CanvasTextBaseline = 'middle';
+
+            switch(config.timerLocation) {
+              case TimerLocation.TOP_LEFT: anchorX = padding; anchorY = padding; align = 'left'; baseline = 'top'; break;
+              case TimerLocation.TOP_CENTER: anchorX = w / 2; anchorY = padding; align = 'center'; baseline = 'top'; break;
+              case TimerLocation.TOP_RIGHT: anchorX = w - padding; anchorY = padding; align = 'right'; baseline = 'top'; break;
+              case TimerLocation.CENTER_LEFT: anchorX = padding; anchorY = h / 2; align = 'left'; baseline = 'middle'; break;
+              case TimerLocation.CENTER: anchorX = w / 2; anchorY = h / 2; align = 'center'; baseline = 'middle'; break;
+              case TimerLocation.CENTER_RIGHT: anchorX = w - padding; anchorY = h / 2; align = 'right'; baseline = 'middle'; break;
+              case TimerLocation.BOTTOM_LEFT: anchorX = padding; anchorY = h - padding; align = 'left'; baseline = 'bottom'; break;
+              case TimerLocation.BOTTOM_CENTER: anchorX = w / 2; anchorY = h - padding; align = 'center'; baseline = 'bottom'; break;
+              case TimerLocation.BOTTOM_RIGHT: anchorX = w - padding; anchorY = h - padding; align = 'right'; baseline = 'bottom'; break;
             }
-            hCtx.fillText(timeStr, hudCanvasRef.current.width / 2, hudCanvasRef.current.height / 2);
+
+            hCtx.save();
+            
+            // Collect text items
+            const items = [
+              { val: config.title, size: config.titleSize, font: '900 italic sans-serif' },
+              { val: config.subtitle, size: config.subtitleSize, font: '400 monospace' },
+              { val: config.showTimer ? timeStr : null, size: config.timerSize, font: '900 monospace' }
+            ].filter(i => i.val);
+
+            if (items.length > 0) {
+              const lineSpacing = 40;
+              let totalHeight = 0;
+              
+              items.forEach(item => {
+                totalHeight += item.size + lineSpacing;
+              });
+              totalHeight -= lineSpacing;
+
+              // Starting Y coordinate based on baseline
+              let curY = anchorY;
+              if (baseline === 'middle') curY = anchorY - totalHeight / 2;
+              else if (baseline === 'bottom') curY = anchorY - totalHeight;
+
+              hCtx.textAlign = align;
+              hCtx.textBaseline = 'top';
+              hCtx.shadowColor = config.color;
+
+              items.forEach((item) => {
+                // FIXED SIZE - Pulse removed as requested for the title and text
+                const dynamicSize = item.size; 
+                const isTitle = item.size === config.titleSize;
+                
+                hCtx.font = `${isTitle ? '900 italic' : '900'} ${dynamicSize}px ${item.font.includes('monospace') ? 'monospace' : 'sans-serif'}`;
+                hCtx.fillStyle = 'white';
+                // Subtle static shadow or no reactive animation for the title
+                hCtx.shadowBlur = isTitle ? (dynamicSize / 8) : (dynamicSize / 4) * (bassIntensity * 0.5);
+                
+                const tx = anchorX;
+
+                // Letter Spacing Emulation for Subtitle
+                if (item.size === config.subtitleSize) {
+                  hCtx.font = `${dynamicSize}px monospace`;
+                  const chars = item.val!.split('');
+                  const charSpacing = 15;
+                  let fullTextWidth = 0;
+                  chars.forEach(c => fullTextWidth += hCtx.measureText(c).width + charSpacing);
+                  fullTextWidth -= charSpacing;
+
+                  let startX = tx;
+                  if (align === 'center') startX = tx - fullTextWidth/2;
+                  if (align === 'right') startX = tx - fullTextWidth;
+
+                  chars.forEach(c => {
+                    hCtx.fillText(c, startX, curY);
+                    startX += hCtx.measureText(c).width + charSpacing;
+                  });
+                } else {
+                  hCtx.fillText(item.val!, tx, curY);
+                }
+                
+                curY += item.size + lineSpacing;
+              });
+            }
+
             hCtx.restore();
           }
         }
@@ -453,9 +493,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-      });
+      containerRef.current?.requestFullscreen();
     } else {
       document.exitFullscreen();
     }
@@ -466,24 +504,16 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       const audio = audioRef.current;
       const canvas = canvasRef.current;
       const hud = hudCanvasRef.current;
-      
       const compCanvas = document.createElement('canvas');
       compCanvas.width = canvas.width;
       compCanvas.height = canvas.height;
       const compCtx = compCanvas.getContext('2d')!;
-
       audio.currentTime = 0;
       audio.play();
-      
       const stream = compCanvas.captureStream(60);
       const audioStream = (audio as any).captureStream ? (audio as any).captureStream() : null;
       const combined = new MediaStream([...stream.getTracks(), ...(audioStream ? audioStream.getAudioTracks() : [])]);
-
-      const recorder = new MediaRecorder(combined, { 
-        mimeType: 'video/webm;codecs=vp9', 
-        videoBitsPerSecond: 100000000 
-      });
-      
+      const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 100000000 });
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
@@ -491,17 +521,15 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `SonicVision-Export-4K.mp4`;
+        a.download = `SonicVision-Master.mp4`;
         a.click();
         onRecordingComplete();
       };
-      
       recorder.start();
       const progressLoop = () => {
         compCtx.clearRect(0,0,compCanvas.width, compCanvas.height);
         compCtx.drawImage(canvas, 0, 0);
         compCtx.drawImage(hud, 0, 0);
-
         onRecordingProgress(audio.currentTime / audio.duration);
         if (audio.ended) recorder.stop(); else if (isRecording) requestAnimationFrame(progressLoop);
       };
@@ -515,75 +543,30 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       <canvas ref={hudCanvasRef} className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none" />
       <audio ref={audioRef} src={audioUrl || undefined} crossOrigin="anonymous" />
       
-      {/* Start Playback Overlay */}
       {audioUrl && !hasInteracted && !isRecording && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-[60] animate-in fade-in duration-700">
-           <button 
-             onClick={togglePlay}
-             className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all group/playbtn"
-           >
-             <svg className="w-10 h-10 text-black ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-               <path d="M8 5v14l11-7z"/>
-             </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-[60]">
+           <button onClick={togglePlay} className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all">
+             <svg className="w-10 h-10 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
            </button>
-           <div className="mt-8 text-white/50 text-[10px] font-black tracking-[0.4em] uppercase">Start Sonic Session</div>
         </div>
       )}
 
       {audioUrl && !isRecording && (
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 pt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
-          {/* Progress Bar */}
-          <div className="relative w-full h-1 group/progress mb-4">
-            <input 
-              type="range"
-              min={0}
-              max={duration || 0}
-              value={currentTime}
-              onChange={handleSeek}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-            />
-            <div className="absolute inset-0 bg-white/20 rounded-full overflow-hidden">
-               <div 
-                 className="h-full bg-red-600 relative" 
-                 style={{ width: `${(currentTime / duration) * 100}%` }}
-               >
-                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-600 rounded-full scale-0 group-hover/progress:scale-100 transition-transform" />
-               </div>
-            </div>
+        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+          <div className="relative w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-6">
+            <input type="range" min={0} max={duration || 0} value={currentTime} onChange={handleSeek} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+            <div className="h-full bg-red-600" style={{ width: `${(currentTime / duration) * 100}%` }} />
           </div>
-
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              {/* Play/Pause */}
               <button onClick={togglePlay} className="text-white hover:scale-110 transition-transform">
-                {isPlaying ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                )}
+                {isPlaying ? <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> : <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>}
               </button>
-
-              {/* Time */}
-              <div className="text-[11px] font-medium text-white/90 tabular-nums">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </div>
+              <div className="text-[13px] font-black tracking-widest tabular-nums uppercase">{formatTime(currentTime)} / {formatTime(duration)}</div>
             </div>
-
-            <div className="flex items-center gap-6">
-              <div className="hidden sm:flex items-center gap-4">
-                 <div className="px-2 py-0.5 rounded border border-white/20 text-[9px] font-black tracking-widest text-white/40 uppercase">4K MASTER</div>
-                 <div className="text-[10px] font-black tracking-[0.2em] text-red-500 uppercase italic">SonicVision Engine</div>
-              </div>
-              
-              {/* Fullscreen Button */}
-              <button onClick={toggleFullscreen} className="text-white hover:scale-110 transition-transform">
-                {isFullscreen ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
-                ) : (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                )}
-              </button>
-            </div>
+            <button onClick={toggleFullscreen} className="text-white hover:scale-110 transition-transform">
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
           </div>
         </div>
       )}

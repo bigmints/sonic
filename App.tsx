@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { ForegroundStyle, BackgroundStyle, VisualizerConfig, AudioState } from './types';
+import { ForegroundStyle, BackgroundStyle, VisualizerConfig, AudioState, TimerLocation } from './types';
 import VisualizerCanvas from './components/VisualizerCanvas';
 import AudioUpload from './components/AudioUpload';
 
@@ -23,8 +23,13 @@ const App: React.FC = () => {
     scale: 1.0,
     complexity: 4000,
     showTimer: true,
-    timerSize: 150,
+    timerSize: 110,
+    timerLocation: TimerLocation.CENTER,
     rotationSpeed: 0.8,
+    title: 'SONIC SESSION',
+    subtitle: 'MASTER RENDER V1',
+    titleSize: 160,
+    subtitleSize: 45,
   });
 
   const [isRecording, setIsRecording] = useState(false);
@@ -53,32 +58,32 @@ const App: React.FC = () => {
   const isReady = !!state.audioUrl;
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 font-sans overflow-hidden">
-      <header className="fixed top-0 w-full p-8 flex justify-between items-center z-50">
-        <h1 className="text-xl font-black tracking-tighter uppercase italic">
-          SONICVISION <span className="text-red-600">PRO</span>
+    <div className="min-h-screen bg-[#020202] text-white flex flex-col items-center justify-center p-4 font-sans overflow-hidden">
+      <header className="fixed top-0 w-full p-10 flex justify-between items-start z-50 pointer-events-none">
+        <h1 className="text-2xl font-black tracking-[-0.05em] uppercase italic pointer-events-auto cursor-default">
+          SONIC<span className="text-red-600">VISION</span> <span className="text-[10px] not-italic tracking-[0.3em] font-medium opacity-50 ml-2">PRO MASTER</span>
         </h1>
         {isReady && !isRecording && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 pointer-events-auto">
             <button 
               onClick={() => setIsRecording(true)}
-              className="px-6 py-2 bg-red-600 border border-red-500 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:bg-red-500 transition-all active:scale-95"
+              className="px-8 py-3 bg-red-600 border border-red-500 rounded-full text-[11px] font-black uppercase tracking-[0.25em] shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:bg-red-500 hover:scale-105 transition-all active:scale-95"
             >
-              Export 4K Video
+              Master Export
             </button>
             <button 
               onClick={handleReset}
-              className="px-6 py-2 bg-neutral-900/80 backdrop-blur border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all active:scale-95"
+              className="px-8 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[11px] font-black uppercase tracking-[0.25em] hover:bg-white hover:text-black transition-all active:scale-95"
             >
-              New Session
+              New Project
             </button>
           </div>
         )}
       </header>
 
-      <main className={`w-full max-w-[1750px] pt-24 transition-all duration-700 ${isReady ? 'grid grid-cols-1 lg:grid-cols-12 gap-10 items-start' : 'flex items-center justify-center min-h-[70vh]'}`}>
+      <main className={`w-full max-w-[1800px] pt-24 transition-all duration-1000 ease-in-out ${isReady ? 'grid grid-cols-1 lg:grid-cols-12 gap-12 items-start' : 'flex items-center justify-center min-h-[80vh]'}`}>
         {/* Visualizer Container */}
-        <div className={`${isReady ? 'lg:col-span-8' : 'w-full max-w-5xl'} aspect-video relative rounded-3xl overflow-hidden bg-[#050505] shadow-2xl border border-white/5 group`}>
+        <div className={`${isReady ? 'lg:col-span-8' : 'w-full max-w-5xl'} aspect-video relative rounded-[2.5rem] overflow-hidden bg-black shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5 group ring-1 ring-white/10`}>
           <VisualizerCanvas 
             audioUrl={state.audioUrl} 
             config={config} 
@@ -90,10 +95,11 @@ const App: React.FC = () => {
           />
           
           {!isReady && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-10 p-10">
-              <div className="p-16 flex flex-col items-center justify-center max-w-3xl w-full">
-                <h2 className="text-[64px] font-black mb-12 italic uppercase tracking-tighter leading-[0.9] text-center text-white">
-                  HIGH-END<br/>AUDIO ENGINE
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 z-10 p-10 backdrop-blur-sm">
+              <div className="flex flex-col items-center justify-center max-w-3xl w-full text-center">
+                <div className="text-[10px] font-black tracking-[0.8em] text-red-500 mb-6 uppercase">Initialize Engine</div>
+                <h2 className="text-[80px] font-black mb-16 italic uppercase tracking-[-0.04em] leading-[0.85] text-white">
+                  PROFESSIONAL<br/><span className="text-white/20">AUDIO RENDERER</span>
                 </h2>
                 <AudioUpload onFileSelect={handleAudioSelect} />
               </div>
@@ -101,13 +107,14 @@ const App: React.FC = () => {
           )}
 
           {isRecording && (
-            <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center p-12">
+            <div className="absolute inset-0 bg-black/98 backdrop-blur-3xl z-50 flex items-center justify-center p-12">
               <div className="w-full max-w-sm text-center">
-                <h3 className="text-xs font-black tracking-[0.4em] mb-12 text-red-500 uppercase">Mastering 4K Export Sequence</h3>
-                <div className="text-8xl font-black text-white mb-6 tracking-tighter">{Math.round(recordingProgress * 100)}<span className="text-xl text-neutral-500">%</span></div>
-                <div className="w-full bg-neutral-800 h-1 rounded-full overflow-hidden">
-                  <div className="bg-red-600 h-full transition-all duration-300" style={{ width: `${recordingProgress * 100}%` }} />
+                <h3 className="text-[10px] font-black tracking-[0.5em] mb-16 text-red-600 uppercase italic">Encoding High Fidelity Stream</h3>
+                <div className="text-[140px] font-black text-white mb-8 tracking-tighter leading-none">{Math.round(recordingProgress * 100)}<span className="text-2xl text-neutral-700 ml-2">%</span></div>
+                <div className="w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden mb-4">
+                  <div className="bg-red-600 h-full transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.8)]" style={{ width: `${recordingProgress * 100}%` }} />
                 </div>
+                <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Do not close window until process finishes</div>
               </div>
             </div>
           )}
@@ -115,25 +122,28 @@ const App: React.FC = () => {
 
         {/* Sidebar - Precision Controls */}
         {isReady && (
-          <div className="lg:col-span-4 space-y-4 max-h-[calc(100vh-160px)] overflow-y-auto pr-2 custom-scrollbar pb-10">
-            <div className="bg-[#0a0a0a]/80 backdrop-blur-3xl border border-white/5 p-8 rounded-[2rem] space-y-12">
+          <div className="lg:col-span-4 space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-4 custom-scrollbar pb-20 animate-in slide-in-from-right duration-700">
+            <div className="bg-[#080808]/90 backdrop-blur-3xl border border-white/5 p-10 rounded-[3rem] space-y-16 shadow-2xl ring-1 ring-white/5">
               
               {/* STYLE SELECTION */}
-              <div className="space-y-10">
+              <div className="space-y-12">
                 <section>
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-[11px] font-black text-red-500 uppercase tracking-[0.4em] italic">FOREGROUND OBJECT</h3>
-                    <span className="text-[9px] font-mono text-neutral-600">OBJ_MOD_A</span>
+                  <div className="flex justify-between items-end mb-8">
+                    <div>
+                      <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic mb-1">CORE OBJECT</h3>
+                      <p className="text-[9px] text-neutral-500 font-medium uppercase tracking-widest">Foreground Geometry</p>
+                    </div>
+                    <span className="text-[9px] font-mono text-red-600/50">MOD_A</span>
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     {Object.values(ForegroundStyle).map(s => (
                       <button 
                         key={s} 
                         onClick={() => setConfig(p => ({ ...p, foregroundStyle: s }))} 
-                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${
+                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-2xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${
                           config.foregroundStyle === s 
-                            ? 'bg-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.7)] scale-105 z-10' 
-                            : 'bg-[#151515] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
+                            ? 'bg-red-600 text-white shadow-[0_15px_40px_rgba(220,38,38,0.4)] scale-105 z-10' 
+                            : 'bg-[#121212] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
                         }`}
                       >
                         <span className="leading-[1.1]">
@@ -147,19 +157,22 @@ const App: React.FC = () => {
                 </section>
 
                 <section>
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-[11px] font-black text-blue-500 uppercase tracking-[0.4em] italic">BACKGROUND SCENE</h3>
-                    <span className="text-[9px] font-mono text-neutral-600">ENV_MOD_B</span>
+                  <div className="flex justify-between items-end mb-8">
+                    <div>
+                      <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic mb-1">ENVIRONMENT</h3>
+                      <p className="text-[9px] text-neutral-500 font-medium uppercase tracking-widest">Background Flux</p>
+                    </div>
+                    <span className="text-[9px] font-mono text-blue-600/50">MOD_B</span>
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     {Object.values(BackgroundStyle).map(s => (
                       <button 
                         key={s} 
                         onClick={() => setConfig(p => ({ ...p, backgroundStyle: s }))} 
-                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${
+                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-2xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${
                           config.backgroundStyle === s 
-                            ? 'bg-blue-600 text-white shadow-[0_0_25px_rgba(37,99,235,0.7)] scale-105 z-10' 
-                            : 'bg-[#151515] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
+                            ? 'bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] scale-105 z-10' 
+                            : 'bg-[#121212] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
                         }`}
                       >
                         <span className="leading-[1.1]">
@@ -173,94 +186,156 @@ const App: React.FC = () => {
                 </section>
               </div>
 
-              {/* PHYSICS & RENDERING */}
-              <section className="space-y-8 pt-6 border-t border-white/5">
+              {/* HUD / TEXT OVERLAY */}
+              <section className="space-y-10 pt-10 border-t border-white/5">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-[11px] font-black text-white uppercase tracking-[0.4em] italic">PHYSICS MATRIX</h3>
-                  <span className="text-[9px] font-mono text-neutral-600">RENDER_V3</span>
+                  <div>
+                    <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic mb-1">HUD SYSTEM</h3>
+                    <p className="text-[9px] text-neutral-500 font-medium uppercase tracking-widest">Text Overlay & Data</p>
+                  </div>
+                  <button 
+                    onClick={() => setConfig(p => ({ ...p, showTimer: !p.showTimer }))}
+                    className={`text-[10px] font-bold px-4 py-1.5 rounded-full border-2 transition-all ${config.showTimer ? 'border-red-600 text-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)]' : 'border-neutral-800 text-neutral-700'}`}
+                  >
+                    {config.showTimer ? 'ACTIVE' : 'BYPASS'}
+                  </button>
+                </div>
+
+                {config.showTimer && (
+                  <div className="space-y-10 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="space-y-5">
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-400">Master Identifier</label>
+                        <input 
+                          type="text" 
+                          value={config.title}
+                          onChange={(e) => setConfig(p => ({ ...p, title: e.target.value }))}
+                          placeholder="TITLE"
+                          className="w-full bg-[#121212] border border-white/5 rounded-xl px-5 py-4 text-[12px] font-black tracking-[0.1em] outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all uppercase italic"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-400">Sub-Metadata</label>
+                        <input 
+                          type="text" 
+                          value={config.subtitle}
+                          onChange={(e) => setConfig(p => ({ ...p, subtitle: e.target.value }))}
+                          placeholder="SUBTITLE"
+                          className="w-full bg-[#121212] border border-white/5 rounded-xl px-5 py-4 text-[10px] font-bold tracking-[0.3em] outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all uppercase"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Title Pt</label>
+                          <span className="text-[9px] font-mono text-white/40">{config.titleSize}</span>
+                        </div>
+                        <input 
+                          type="range" min="50" max="600" step="10" 
+                          value={config.titleSize} 
+                          onChange={(e) => setConfig(p => ({ ...p, titleSize: parseInt(e.target.value) }))}
+                          className="w-full h-1 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-red-600"
+                        />
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Timer Pt</label>
+                          <span className="text-[9px] font-mono text-white/40">{config.timerSize}</span>
+                        </div>
+                        <input 
+                          type="range" min="50" max="400" step="10" 
+                          value={config.timerSize} 
+                          onChange={(e) => setConfig(p => ({ ...p, timerSize: parseInt(e.target.value) }))}
+                          className="w-full h-1 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <label className="text-[9px] font-black uppercase tracking-[0.4em] text-neutral-500 text-center block">Spatial Alignment Grid</label>
+                      <div className="flex justify-center">
+                        <div className="grid grid-cols-3 gap-3 p-3 bg-black/40 rounded-3xl border border-white/5">
+                          {Object.values(TimerLocation).map(loc => (
+                            <button
+                              key={loc}
+                              onClick={() => setConfig(p => ({ ...p, timerLocation: loc }))}
+                              className={`w-10 h-10 rounded-lg border-2 transition-all ${
+                                config.timerLocation === loc 
+                                  ? 'bg-red-600 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
+                                  : 'bg-neutral-900 border-transparent hover:border-white/20'
+                              }`}
+                              title={loc}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* RENDER ENGINE CONTROLS */}
+              <section className="space-y-10 pt-10 border-t border-white/5">
+                <div className="flex justify-between items-end">
+                   <div>
+                    <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic mb-1">PHYSICS ENGINE</h3>
+                    <p className="text-[9px] text-neutral-500 font-medium uppercase tracking-widest">Real-time Modulation</p>
+                  </div>
+                  <span className="text-[9px] font-mono text-neutral-600 uppercase">GPU_MASTER</span>
                 </div>
                 
-                <div className="space-y-6">
-                  {/* Colors */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-widest text-neutral-500">Primary Tone</label>
-                      <div className="flex items-center gap-3 bg-[#151515] p-2 rounded-lg border border-white/5">
+                <div className="space-y-8">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Primary Color</label>
+                      <div className="flex items-center gap-3 bg-[#121212] p-3 rounded-xl border border-white/5 focus-within:border-white/20 transition-all">
                         <input 
                           type="color" 
                           value={config.color} 
                           onChange={(e) => setConfig(p => ({ ...p, color: e.target.value }))}
-                          className="w-full h-4 bg-transparent border-none cursor-pointer"
+                          className="w-full h-6 bg-transparent border-none cursor-pointer rounded-md overflow-hidden"
                         />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[8px] font-black uppercase tracking-widest text-neutral-500">Secondary Tone</label>
-                      <div className="flex items-center gap-3 bg-[#151515] p-2 rounded-lg border border-white/5">
+                    <div className="space-y-3">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Accent Color</label>
+                      <div className="flex items-center gap-3 bg-[#121212] p-3 rounded-xl border border-white/5 focus-within:border-white/20 transition-all">
                         <input 
                           type="color" 
                           value={config.colorSecondary} 
                           onChange={(e) => setConfig(p => ({ ...p, colorSecondary: e.target.value }))}
-                          className="w-full h-4 bg-transparent border-none cursor-pointer"
+                          className="w-full h-6 bg-transparent border-none cursor-pointer rounded-md overflow-hidden"
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Range Sliders */}
-                  <div className="space-y-5">
+                  <div className="space-y-6">
                     {[
-                      { label: 'Sensitivity', key: 'sensitivity', min: 0.5, max: 5, step: 0.1, color: 'accent-red-600', unit: '' },
-                      { label: 'Complexity', key: 'complexity', min: 500, max: 8000, step: 100, color: 'accent-red-600', unit: 'pts' },
-                      { label: 'Glow Depth', key: 'glowAmount', min: 0, max: 100, step: 1, color: 'accent-white', unit: '%' },
-                      { label: 'Foreground Speed', key: 'speed', min: 0.1, max: 3, step: 0.1, color: 'accent-red-600', unit: 'x' },
-                      { label: 'Environment Speed', key: 'backgroundSpeed', min: 0.05, max: 2, step: 0.05, color: 'accent-blue-600', unit: 'x' },
-                      { label: 'Magnification', key: 'scale', min: 0.2, max: 2.5, step: 0.1, color: 'accent-blue-600', unit: 'x' },
-                      { label: 'Rotation Speed', key: 'rotationSpeed', min: 0, max: 5, step: 0.1, color: 'accent-blue-400', unit: 'rad/s' },
+                      { label: 'Gain Sensitivity', key: 'sensitivity', min: 0.5, max: 5, step: 0.1, color: 'accent-red-600', unit: '' },
+                      { label: 'Resolution Density', key: 'complexity', min: 500, max: 8000, step: 100, color: 'accent-white', unit: 'pts' },
+                      { label: 'Foreground Delta', key: 'speed', min: 0.1, max: 3, step: 0.1, color: 'accent-red-600', unit: 'x' },
+                      { label: 'Environment Delta', key: 'backgroundSpeed', min: 0.05, max: 2, step: 0.05, color: 'accent-blue-600', unit: 'x' },
+                      { label: 'Geometric Scale', key: 'scale', min: 0.2, max: 2.5, step: 0.1, color: 'accent-red-600', unit: 'x' },
+                      { label: 'Orbital Velocity', key: 'rotationSpeed', min: 0, max: 5, step: 0.1, color: 'accent-white', unit: 'rad/s' },
                     ].map((ctrl) => (
-                      <div key={ctrl.key} className="space-y-2">
+                      <div key={ctrl.key} className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <label className="text-[9px] font-black uppercase tracking-widest text-neutral-400">{ctrl.label}</label>
-                          <span className="text-[9px] font-mono text-white">{(config as any)[ctrl.key]}{ctrl.unit}</span>
+                          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">{ctrl.label}</label>
+                          <span className="text-[10px] font-mono text-white/50">{(config as any)[ctrl.key]}{ctrl.unit}</span>
                         </div>
                         <input 
                           type="range" min={ctrl.min} max={ctrl.max} step={ctrl.step}
                           value={(config as any)[ctrl.key]} 
                           onChange={(e) => setConfig(p => ({ ...p, [ctrl.key]: parseFloat(e.target.value) }))}
-                          className={`w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer ${ctrl.color}`}
+                          className={`w-full h-1 bg-neutral-900 rounded-full appearance-none cursor-pointer ${ctrl.color} transition-all`}
                         />
                       </div>
                     ))}
                   </div>
                 </div>
-              </section>
-
-              {/* HUD / OVERLAY */}
-              <section className="space-y-6 pt-6 border-t border-white/5">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-[11px] font-black text-white uppercase tracking-[0.4em] italic">HUD OVERLAY</h3>
-                  <button 
-                    onClick={() => setConfig(p => ({ ...p, showTimer: !p.showTimer }))}
-                    className={`text-[9px] px-3 py-1 rounded border transition-all ${config.showTimer ? 'border-red-500 text-red-500' : 'border-neutral-700 text-neutral-700'}`}
-                  >
-                    {config.showTimer ? 'ONLINE' : 'OFFLINE'}
-                  </button>
-                </div>
-
-                {config.showTimer && (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-neutral-400">Timer Scale</label>
-                      <span className="text-[9px] font-mono text-white">{config.timerSize}px</span>
-                    </div>
-                    <input 
-                      type="range" min="50" max="400" step="10" 
-                      value={config.timerSize} 
-                      onChange={(e) => setConfig(p => ({ ...p, timerSize: parseInt(e.target.value) }))}
-                      className="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-white"
-                    />
-                  </div>
-                )}
               </section>
 
             </div>
