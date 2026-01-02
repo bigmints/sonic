@@ -18,13 +18,20 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   isRecording, 
   onRecordingComplete, 
   onRecordingProgress,
-  isPlaying 
+  isPlaying: isPlayingProp 
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hudCanvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const threeRef = useRef<{
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
@@ -39,6 +46,36 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   } | null>(null);
 
   useImperativeHandle(ref, () => audioRef.current!);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+    };
+  }, [audioUrl]);
 
   useEffect(() => {
     if (!audioUrl || !canvasRef.current || !hudCanvasRef.current) return;
@@ -388,15 +425,51 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       frameId = requestAnimationFrame(render);
     };
 
-    const formatTime = (s: number) => {
-      const m = Math.floor(s/60);
-      const sec = Math.floor(s%60);
-      return `${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
-    };
-
     render();
     return () => cancelAnimationFrame(frameId);
   }, [config, isPlaying]);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s/60);
+    const sec = Math.floor(s%60);
+    return `${m.toString()}:${sec.toString().padStart(2,'0')}`;
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = parseFloat(e.target.value);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    if (audioRef.current) audioRef.current.volume = v;
+  };
+
+  const toggleMute = () => {
+    const newVal = !isMuted;
+    setIsMuted(newVal);
+    if (audioRef.current) audioRef.current.muted = newVal;
+  };
+
+  const togglePlay = () => {
+    if (audioRef.current?.paused) {
+      audioRef.current.play();
+    } else {
+      audioRef.current?.pause();
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   useEffect(() => {
     if (isRecording && canvasRef.current && hudCanvasRef.current && audioRef.current && audioUrl) {
@@ -447,18 +520,88 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   }, [isRecording, audioUrl]);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
+    <div ref={containerRef} className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden group">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-contain z-0" />
       <canvas ref={hudCanvasRef} className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none" />
       <audio ref={audioRef} src={audioUrl || undefined} crossOrigin="anonymous" />
       
       {audioUrl && !isRecording && (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-black/60 backdrop-blur-3xl px-10 py-5 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-all duration-700 z-50">
-           <button onClick={() => audioRef.current?.paused ? audioRef.current.play() : audioRef.current?.pause()} className="text-[10px] font-black tracking-[0.3em] text-white hover:text-red-500 transition-colors uppercase">
-             {isPlaying ? 'PAUSE MASTER' : 'START PLAYBACK'}
-           </button>
-           <div className="h-4 w-[1px] bg-white/20" />
-           <div className="text-[9px] font-black tracking-[0.5em] text-red-500 uppercase font-mono">4K RENDERING ENGINE</div>
+        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 pt-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+          {/* Progress Bar */}
+          <div className="relative w-full h-1 group/progress mb-4">
+            <input 
+              type="range"
+              min={0}
+              max={duration || 0}
+              value={currentTime}
+              onChange={handleSeek}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div className="absolute inset-0 bg-white/20 rounded-full overflow-hidden">
+               <div 
+                 className="h-full bg-red-600 relative" 
+                 style={{ width: `${(currentTime / duration) * 100}%` }}
+               >
+                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-600 rounded-full scale-0 group-hover/progress:scale-100 transition-transform" />
+               </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              {/* Play/Pause */}
+              <button onClick={togglePlay} className="text-white hover:scale-110 transition-transform">
+                {isPlaying ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
+
+              {/* Volume */}
+              <div className="flex items-center gap-3 group/volume">
+                <button onClick={toggleMute} className="text-white">
+                  {isMuted || volume === 0 ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                  ) : volume < 0.5 ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 9v6h4l5 5V4l-5 5H7z"/></svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  )}
+                </button>
+                <input 
+                  type="range" 
+                  min={0} 
+                  max={1} 
+                  step={0.01} 
+                  value={volume} 
+                  onChange={handleVolumeChange}
+                  className="w-0 group-hover/volume:w-20 transition-all h-1 bg-white/20 appearance-none accent-white cursor-pointer"
+                />
+              </div>
+
+              {/* Time */}
+              <div className="text-[11px] font-medium text-white/90 tabular-nums">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="hidden sm:flex items-center gap-4">
+                 <div className="px-2 py-0.5 rounded border border-white/20 text-[9px] font-black tracking-widest text-white/40 uppercase">4K MASTER</div>
+                 <div className="text-[10px] font-black tracking-[0.2em] text-red-500 uppercase italic">SonicVision Engine</div>
+              </div>
+              
+              {/* Fullscreen Button */}
+              <button onClick={toggleFullscreen} className="text-white hover:scale-110 transition-transform">
+                {isFullscreen ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

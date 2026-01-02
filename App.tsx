@@ -33,15 +33,38 @@ const App: React.FC = () => {
 
   const handleAudioSelect = (file: File) => {
     const url = URL.createObjectURL(file);
-    setState(prev => ({ ...prev, file, audioUrl: url }));
+    setState({ file, audioUrl: url, isPlaying: false });
+  };
+
+  const handleReset = () => {
+    if (state.audioUrl) {
+      URL.revokeObjectURL(state.audioUrl);
+    }
+    setState({
+      file: null,
+      audioUrl: null,
+      isPlaying: false,
+    });
+    setIsRecording(false);
+    setRecordingProgress(0);
   };
 
   const isReady = !!state.audioUrl;
 
   return (
     <div className="min-h-screen bg-[#020202] text-white flex flex-col items-center justify-center p-4 font-sans overflow-hidden">
-      <header className="fixed top-0 w-full p-6 flex justify-between items-center z-50 pointer-events-none">
-        <h1 className="text-xl font-black tracking-tighter uppercase italic pointer-events-auto">SonicVision <span className="text-red-600">PRO</span></h1>
+      <header className="fixed top-0 w-full p-6 flex justify-between items-center z-50">
+        <h1 className="text-xl font-black tracking-tighter uppercase italic">
+          SonicVision <span className="text-red-600">PRO</span>
+        </h1>
+        {isReady && !isRecording && (
+          <button 
+            onClick={handleReset}
+            className="px-6 py-2 bg-neutral-900/80 backdrop-blur border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 hover:border-red-500 transition-all active:scale-95"
+          >
+            New Session
+          </button>
+        )}
       </header>
 
       <main className="w-full max-w-[1700px] grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-20">
