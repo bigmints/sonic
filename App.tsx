@@ -58,12 +58,20 @@ const App: React.FC = () => {
           SonicVision <span className="text-red-600">PRO</span>
         </h1>
         {isReady && !isRecording && (
-          <button 
-            onClick={handleReset}
-            className="px-6 py-2 bg-neutral-900/80 backdrop-blur border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 hover:border-red-500 transition-all active:scale-95"
-          >
-            New Session
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsRecording(true)}
+              className="px-6 py-2 bg-red-600 border border-red-500 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:bg-red-500 transition-all active:scale-95"
+            >
+              Export 4K Video
+            </button>
+            <button 
+              onClick={handleReset}
+              className="px-6 py-2 bg-neutral-900/80 backdrop-blur border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all active:scale-95"
+            >
+              New Session
+            </button>
+          </div>
         )}
       </header>
 
@@ -194,10 +202,6 @@ const App: React.FC = () => {
                 ))}
               </div>
             </section>
-
-            <div className="pt-4">
-              <button disabled={!isReady || isRecording} onClick={() => setIsRecording(true)} className="w-full py-5 bg-red-600 text-white rounded-xl font-black uppercase tracking-[0.3em] text-[10px] shadow-[0_20px_50px_rgba(255,0,0,0.2)] hover:bg-red-500 transition-all active:scale-95 disabled:opacity-20">Master 4K Video</button>
-            </div>
           </div>
         </div>
       </main>
