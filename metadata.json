@@ -1,0 +1,7 @@
+{
+  "name": "SonicVision 4K",
+  "description": "A professional-grade audio visualizer that uses Gemini 3 Pro to generate stunning 4K backgrounds and exports synchronized MP4 videos of your music.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
