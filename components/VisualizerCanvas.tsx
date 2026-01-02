@@ -399,7 +399,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
             
             // Collect text items
             const items = [
-              { val: config.title, size: config.titleSize, font: '900 italic sans-serif' },
+              { val: config.title, size: config.titleSize, font: '900 sans-serif' },
               { val: config.subtitle, size: config.subtitleSize, font: '400 monospace' },
               { val: config.showTimer ? timeStr : null, size: config.timerSize, font: '900 monospace' }
             ].filter(i => i.val);
@@ -427,7 +427,8 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
                 const dynamicSize = item.size; 
                 const isTitle = item.size === config.titleSize;
                 
-                hCtx.font = `${isTitle ? '900 italic' : '900'} ${dynamicSize}px ${item.font.includes('monospace') ? 'monospace' : 'sans-serif'}`;
+                // Italics removed for title as requested
+                hCtx.font = `900 ${dynamicSize}px ${item.font.includes('monospace') ? 'monospace' : 'sans-serif'}`;
                 hCtx.fillStyle = 'white';
                 // Subtle static shadow or no reactive animation for the title
                 hCtx.shadowBlur = isTitle ? (dynamicSize / 8) : (dynamicSize / 4) * (bassIntensity * 0.5);

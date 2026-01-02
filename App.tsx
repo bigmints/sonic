@@ -60,8 +60,8 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#020202] text-white flex flex-col items-center justify-center p-4 font-sans overflow-hidden">
       <header className="fixed top-0 w-full p-10 flex justify-between items-start z-50 pointer-events-none">
-        <h1 className="text-2xl font-black tracking-[-0.05em] uppercase italic pointer-events-auto cursor-default">
-          SONIC<span className="text-red-600">VISION</span> <span className="text-[10px] not-italic tracking-[0.3em] font-medium opacity-50 ml-2">PRO MASTER</span>
+        <h1 className="text-2xl font-black tracking-[-0.05em] uppercase pointer-events-auto cursor-default">
+          SONIC<span className="text-red-600">VISION</span> <span className="text-[10px] tracking-[0.3em] font-medium opacity-50 ml-2">PRO MASTER</span>
         </h1>
         {isReady && !isRecording && (
           <div className="flex items-center gap-4 pointer-events-auto">
@@ -98,7 +98,7 @@ const App: React.FC = () => {
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 z-10 p-10 backdrop-blur-sm">
               <div className="flex flex-col items-center justify-center max-w-3xl w-full text-center">
                 <div className="text-[10px] font-black tracking-[0.8em] text-red-500 mb-6 uppercase">Initialize Engine</div>
-                <h2 className="text-[80px] font-black mb-16 italic uppercase tracking-[-0.04em] leading-[0.85] text-white">
+                <h2 className="text-[80px] font-black mb-16 uppercase tracking-[-0.04em] leading-[0.85] text-white">
                   PROFESSIONAL<br/><span className="text-white/20">AUDIO RENDERER</span>
                 </h2>
                 <AudioUpload onFileSelect={handleAudioSelect} />
@@ -211,7 +211,7 @@ const App: React.FC = () => {
                           value={config.title}
                           onChange={(e) => setConfig(p => ({ ...p, title: e.target.value }))}
                           placeholder="TITLE"
-                          className="w-full bg-[#121212] border border-white/5 rounded-xl px-5 py-4 text-[12px] font-black tracking-[0.1em] outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all uppercase italic"
+                          className="w-full bg-[#121212] border border-white/5 rounded-xl px-5 py-4 text-[12px] font-black tracking-[0.1em] outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all uppercase"
                         />
                       </div>
                       <div className="space-y-3">
