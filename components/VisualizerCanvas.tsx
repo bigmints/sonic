@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import * as THREE from 'https://esm.sh/three';
+import * as THREE from 'three';
 import { VisualizerConfig, ForegroundStyle, BackgroundStyle, TimerLocation } from '../types';
 
 interface Props {
@@ -12,19 +12,19 @@ interface Props {
   isPlaying: boolean;
 }
 
-const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({ 
-  audioUrl, 
-  config, 
-  isRecording, 
-  onRecordingComplete, 
+const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
+  audioUrl,
+  config,
+  isRecording,
+  onRecordingComplete,
   onRecordingProgress,
-  isPlaying: isPlayingProp 
+  isPlaying: isPlayingProp
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hudCanvasRef = useRef<HTMLCanvasElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  
+
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -84,7 +84,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
 
     const width = 3840;
     const height = 2160;
-    
+
     hudCanvasRef.current.width = width;
     hudCanvasRef.current.height = height;
 
@@ -118,8 +118,8 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
     scene.add(bgGroup);
     scene.add(fgGroup);
 
-    threeRef.current = { 
-      scene, camera, renderer, 
+    threeRef.current = {
+      scene, camera, renderer,
       fgGroup, bgGroup,
       analyser, dataArray, clock,
       fgPoints: null,
@@ -135,9 +135,9 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   useEffect(() => {
     if (!threeRef.current) return;
     const { fgGroup, bgGroup, scene } = threeRef.current;
-    
-    while(fgGroup.children.length > 0) fgGroup.remove(fgGroup.children[0]);
-    while(bgGroup.children.length > 0) bgGroup.remove(bgGroup.children[0]);
+
+    while (fgGroup.children.length > 0) fgGroup.remove(fgGroup.children[0]);
+    while (bgGroup.children.length > 0) bgGroup.remove(bgGroup.children[0]);
 
     if (config.backgroundStyle !== BackgroundStyle.SOLID) {
       const bgCount = 12000;
@@ -146,35 +146,35 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       const bgCol = new Float32Array(bgCount * 3);
       const bgC = new THREE.Color(config.colorSecondary);
 
-      for(let i=0; i<bgCount; i++) {
+      for (let i = 0; i < bgCount; i++) {
         if (config.backgroundStyle === BackgroundStyle.HYPER_TUNNEL || config.backgroundStyle === BackgroundStyle.STAR_FIELD) {
-          bgPos[i*3] = (Math.random() - 0.5) * 8000;
-          bgPos[i*3+1] = (Math.random() - 0.5) * 8000;
-          bgPos[i*3+2] = Math.random() * -25000;
+          bgPos[i * 3] = (Math.random() - 0.5) * 8000;
+          bgPos[i * 3 + 1] = (Math.random() - 0.5) * 8000;
+          bgPos[i * 3 + 2] = Math.random() * -25000;
         } else if (config.backgroundStyle === BackgroundStyle.VORTEX_FLOW) {
           const angle = Math.random() * Math.PI * 2;
           const r = 2000 + Math.random() * 5000;
-          bgPos[i*3] = Math.cos(angle) * r;
-          bgPos[i*3+1] = Math.sin(angle) * r;
-          bgPos[i*3+2] = (Math.random() - 0.5) * 10000;
+          bgPos[i * 3] = Math.cos(angle) * r;
+          bgPos[i * 3 + 1] = Math.sin(angle) * r;
+          bgPos[i * 3 + 2] = (Math.random() - 0.5) * 10000;
         } else {
-          bgPos[i*3] = (Math.random() - 0.5) * 20000;
-          bgPos[i*3+1] = (Math.random() - 0.5) * 20000;
-          bgPos[i*3+2] = (Math.random() - 0.5) * 15000;
+          bgPos[i * 3] = (Math.random() - 0.5) * 20000;
+          bgPos[i * 3 + 1] = (Math.random() - 0.5) * 20000;
+          bgPos[i * 3 + 2] = (Math.random() - 0.5) * 15000;
         }
         const brightness = 0.4 + Math.random() * 0.6;
-        bgCol[i*3] = bgC.r * brightness; 
-        bgCol[i*3+1] = bgC.g * brightness; 
-        bgCol[i*3+2] = bgC.b * brightness;
+        bgCol[i * 3] = bgC.r * brightness;
+        bgCol[i * 3 + 1] = bgC.g * brightness;
+        bgCol[i * 3 + 2] = bgC.b * brightness;
       }
       bgGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));
       bgGeo.setAttribute('color', new THREE.BufferAttribute(bgCol, 3));
-      const bgMat = new THREE.PointsMaterial({ 
-        size: config.backgroundStyle === BackgroundStyle.STAR_FIELD ? 10 : 25, 
-        vertexColors: true, 
-        transparent: true, 
-        opacity: 0.8, 
-        blending: THREE.AdditiveBlending 
+      const bgMat = new THREE.PointsMaterial({
+        size: config.backgroundStyle === BackgroundStyle.STAR_FIELD ? 10 : 25,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
       });
       const bgPts = new THREE.Points(bgGeo, bgMat);
       bgGroup.add(bgPts);
@@ -189,13 +189,13 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       const c1 = new THREE.Color(config.color);
       const c2 = new THREE.Color(config.colorSecondary);
 
-      for(let i=0; i<fgCount; i++) {
+      for (let i = 0; i < fgCount; i++) {
         const t = i / fgCount;
-        
+
         const col = new THREE.Color();
-        if (config.foregroundStyle === ForegroundStyle.SONIC_SPIRAL || 
-            config.foregroundStyle === ForegroundStyle.COSMIC_MANDALA || 
-            config.foregroundStyle === ForegroundStyle.SONIC_BLOOM) {
+        if (config.foregroundStyle === ForegroundStyle.SONIC_SPIRAL ||
+          config.foregroundStyle === ForegroundStyle.COSMIC_MANDALA ||
+          config.foregroundStyle === ForegroundStyle.SONIC_BLOOM) {
           if (t < 0.15) {
             col.setRGB(1, 0, 0); // Core Red
           } else if (t < 0.6) {
@@ -208,35 +208,35 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         } else {
           col.copy(c1).lerp(c2, t);
         }
-        fgCol[i*3] = col.r; fgCol[i*3+1] = col.g; fgCol[i*3+2] = col.b;
-        
+        fgCol[i * 3] = col.r; fgCol[i * 3 + 1] = col.g; fgCol[i * 3 + 2] = col.b;
+
         if (config.foregroundStyle === ForegroundStyle.CYBER_SPHERE) {
-           const phi = Math.acos(-1 + (2 * i) / fgCount);
-           const theta = Math.sqrt(fgCount * Math.PI) * phi;
-           const r = 500;
-           fgPos[i*3] = Math.sin(phi) * Math.cos(theta) * r;
-           fgPos[i*3+1] = Math.sin(phi) * Math.sin(theta) * r;
-           fgPos[i*3+2] = Math.cos(phi) * r;
+          const phi = Math.acos(-1 + (2 * i) / fgCount);
+          const theta = Math.sqrt(fgCount * Math.PI) * phi;
+          const r = 500;
+          fgPos[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
+          fgPos[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r;
+          fgPos[i * 3 + 2] = Math.cos(phi) * r;
         } else if (config.foregroundStyle === ForegroundStyle.ORBITAL_RINGS) {
-           const ringCount = 8;
-           const dotsPerRing = fgCount / ringCount;
-           const ringIndex = Math.floor(i / dotsPerRing);
-           const angle = (i % dotsPerRing) / dotsPerRing * Math.PI * 2;
-           const radius = 300 + ringIndex * 100;
-           const tilt = ringIndex * (Math.PI / ringCount);
-           fgPos[i*3] = Math.cos(angle) * radius;
-           fgPos[i*3+1] = Math.sin(angle) * radius * Math.cos(tilt);
-           fgPos[i*3+2] = Math.sin(angle) * radius * Math.sin(tilt);
+          const ringCount = 8;
+          const dotsPerRing = fgCount / ringCount;
+          const ringIndex = Math.floor(i / dotsPerRing);
+          const angle = (i % dotsPerRing) / dotsPerRing * Math.PI * 2;
+          const radius = 300 + ringIndex * 100;
+          const tilt = ringIndex * (Math.PI / ringCount);
+          fgPos[i * 3] = Math.cos(angle) * radius;
+          fgPos[i * 3 + 1] = Math.sin(angle) * radius * Math.cos(tilt);
+          fgPos[i * 3 + 2] = Math.sin(angle) * radius * Math.sin(tilt);
         }
       }
       fgGeo.setAttribute('position', new THREE.BufferAttribute(fgPos, 3));
       fgGeo.setAttribute('color', new THREE.BufferAttribute(fgCol, 3));
-      const fgMat = new THREE.PointsMaterial({ 
-        size: 15, 
-        vertexColors: true, 
-        transparent: true, 
-        opacity: 1, 
-        blending: THREE.AdditiveBlending 
+      const fgMat = new THREE.PointsMaterial({
+        size: 15,
+        vertexColors: true,
+        transparent: true,
+        opacity: 1,
+        blending: THREE.AdditiveBlending
       });
       const fgPts = new THREE.Points(fgGeo, fgMat);
       fgGroup.add(fgPts);
@@ -253,10 +253,10 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
 
     const render = () => {
       const time = clock.getElapsedTime();
-      
+
       if (analyser) {
         analyser.getByteFrequencyData(dataArray);
-        
+
         let bass = 0;
         for (let i = 0; i < 12; i++) bass += dataArray[i];
         bass /= (12 * 255);
@@ -274,9 +274,9 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               const r = dotSpread * Math.sqrt(i);
               const bin = Math.floor((i % 256));
               const amp = dataArray[bin] / 255;
-              posArr[i*3] = Math.cos(angle) * (r + amp * 60);
-              posArr[i*3+1] = Math.sin(angle) * (r + amp * 60);
-              posArr[i*3+2] = Math.sin(time * 3 + i * 0.04) * (thump * 150);
+              posArr[i * 3] = Math.cos(angle) * (r + amp * 60);
+              posArr[i * 3 + 1] = Math.sin(angle) * (r + amp * 60);
+              posArr[i * 3 + 2] = Math.sin(time * 3 + i * 0.04) * (thump * 150);
             }
             fgPoints.material.size = (config.foregroundStyle === ForegroundStyle.SONIC_SPIRAL ? 10 : 15 + thump * 20) * config.scale;
           } else if (config.foregroundStyle === ForegroundStyle.COSMIC_MANDALA || config.foregroundStyle === ForegroundStyle.SONIC_BLOOM) {
@@ -290,27 +290,27 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               const baseR = (100 + ringIdx * 150) * config.scale;
               const wave = Math.sin(petals * angle + time * config.speed) * (50 + amp);
               const r = baseR + wave + amp;
-              posArr[i*3] = Math.cos(angle) * r;
-              posArr[i*3+1] = Math.sin(angle) * r;
-              posArr[i*3+2] = Math.sin(time * 2 + angle * petals) * (thump * 100);
+              posArr[i * 3] = Math.cos(angle) * r;
+              posArr[i * 3 + 1] = Math.sin(angle) * r;
+              posArr[i * 3 + 2] = Math.sin(time * 2 + angle * petals) * (thump * 100);
             }
           } else if (config.foregroundStyle === ForegroundStyle.PSY_MANDALA) {
             for (let i = 0; i < count; i++) {
               const angle = (i / count) * Math.PI * 2;
               const amp = dataArray[Math.floor((i % 128))] / 255 * 400 * config.sensitivity;
               const r = (500 * config.scale + amp) + Math.sin(time * 2 + angle * 12) * 100;
-              posArr[i*3] = Math.cos(angle) * r;
-              posArr[i*3+1] = Math.sin(angle) * r;
-              posArr[i*3+2] = Math.cos(time * 4 + i * 0.1) * (thump * 100);
+              posArr[i * 3] = Math.cos(angle) * r;
+              posArr[i * 3 + 1] = Math.sin(angle) * r;
+              posArr[i * 3 + 2] = Math.cos(time * 4 + i * 0.1) * (thump * 100);
             }
           } else if (config.foregroundStyle === ForegroundStyle.FRACTAL_DNA) {
             for (let i = 0; i < count; i++) {
               const helixIdx = i % 2;
               const angle = (i * 0.08) + time * config.speed + (helixIdx * Math.PI);
               const radius = 300 * config.scale + thump * 200;
-              posArr[i*3] = Math.cos(angle) * radius;
-              posArr[i*3+1] = Math.sin(angle) * radius;
-              posArr[i*3+2] = (i - count / 2) * (8 * config.scale);
+              posArr[i * 3] = Math.cos(angle) * radius;
+              posArr[i * 3 + 1] = Math.sin(angle) * radius;
+              posArr[i * 3 + 2] = (i - count / 2) * (8 * config.scale);
             }
           } else if (config.foregroundStyle === ForegroundStyle.CYBER_SPHERE) {
             const rBase = 500 * config.scale + thump * 300;
@@ -319,9 +319,9 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               const theta = Math.sqrt(count * Math.PI) * phi + time * config.speed * 0.2;
               const amp = dataArray[i % 256] / 255 * 100 * config.sensitivity;
               const r = rBase + amp;
-              posArr[i*3] = Math.sin(phi) * Math.cos(theta) * r;
-              posArr[i*3+1] = Math.sin(phi) * Math.sin(theta) * r;
-              posArr[i*3+2] = Math.cos(phi) * r;
+              posArr[i * 3] = Math.sin(phi) * Math.cos(theta) * r;
+              posArr[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * r;
+              posArr[i * 3 + 2] = Math.cos(phi) * r;
             }
           } else if (config.foregroundStyle === ForegroundStyle.ORBITAL_RINGS) {
             const ringCount = 8;
@@ -331,9 +331,9 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
               const angle = (i % dpr) / dpr * Math.PI * 2 + time * config.speed * (0.5 + ri * 0.1);
               const radius = (300 + ri * 120 + (dataArray[ri * 10] / 255 * 100)) * config.scale;
               const tilt = ri * (Math.PI / ringCount) + time * 0.1 * config.rotationSpeed;
-              posArr[i*3] = Math.cos(angle) * radius;
-              posArr[i*3+1] = Math.sin(angle) * radius * Math.cos(tilt);
-              posArr[i*3+2] = Math.sin(angle) * radius * Math.sin(tilt);
+              posArr[i * 3] = Math.cos(angle) * radius;
+              posArr[i * 3 + 1] = Math.sin(angle) * radius * Math.cos(tilt);
+              posArr[i * 3 + 2] = Math.sin(angle) * radius * Math.sin(tilt);
             }
           }
           fgPoints.geometry.attributes.position.needsUpdate = true;
@@ -343,14 +343,14 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
           const posArr = bgPoints.geometry.attributes.position.array as Float32Array;
           if (config.backgroundStyle === BackgroundStyle.HYPER_TUNNEL || config.backgroundStyle === BackgroundStyle.STAR_FIELD) {
             for (let i = 0; i < posArr.length / 3; i++) {
-              posArr[i*3+2] += (25 + (thump * 180)) * config.backgroundSpeed;
-              if (posArr[i*3+2] > 3000) {
-                posArr[i*3+2] = -25000;
+              posArr[i * 3 + 2] += (25 + (thump * 180)) * config.backgroundSpeed;
+              if (posArr[i * 3 + 2] > 3000) {
+                posArr[i * 3 + 2] = -25000;
               }
             }
           } else {
-             bgGroup.rotation.y += 0.0007 * config.backgroundSpeed;
-             bgGroup.rotation.x += 0.0004 * config.backgroundSpeed;
+            bgGroup.rotation.y += 0.0007 * config.backgroundSpeed;
+            bgGroup.rotation.x += 0.0004 * config.backgroundSpeed;
           }
           bgPoints.geometry.attributes.position.needsUpdate = true;
           bgPoints.material.opacity = 0.5 + thump * 0.5;
@@ -369,13 +369,13 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         const hCtx = hudCanvasRef.current.getContext('2d');
         if (hCtx) {
           hCtx.clearRect(0, 0, hudCanvasRef.current.width, hudCanvasRef.current.height);
-          
+
           if (config.showTimer || config.title || config.subtitle) {
             const timeStr = formatTime(audioRef.current?.currentTime || 0);
             const w = hudCanvasRef.current.width;
             const h = hudCanvasRef.current.height;
             const bassIntensity = dataArray ? dataArray[0] / 255 : 0;
-            
+
             // Layout Setup
             const padding = 200;
             let anchorX = w / 2;
@@ -383,7 +383,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
             let align: CanvasTextAlign = 'center';
             let baseline: CanvasTextBaseline = 'middle';
 
-            switch(config.timerLocation) {
+            switch (config.timerLocation) {
               case TimerLocation.TOP_LEFT: anchorX = padding; anchorY = padding; align = 'left'; baseline = 'top'; break;
               case TimerLocation.TOP_CENTER: anchorX = w / 2; anchorY = padding; align = 'center'; baseline = 'top'; break;
               case TimerLocation.TOP_RIGHT: anchorX = w - padding; anchorY = padding; align = 'right'; baseline = 'top'; break;
@@ -396,7 +396,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
             }
 
             hCtx.save();
-            
+
             // Collect text items
             const items = [
               { val: config.title, size: config.titleSize, font: '900 sans-serif' },
@@ -407,7 +407,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
             if (items.length > 0) {
               const lineSpacing = 40;
               let totalHeight = 0;
-              
+
               items.forEach(item => {
                 totalHeight += item.size + lineSpacing;
               });
@@ -424,15 +424,15 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
 
               items.forEach((item) => {
                 // FIXED SIZE - Pulse removed as requested for the title and text
-                const dynamicSize = item.size; 
+                const dynamicSize = item.size;
                 const isTitle = item.size === config.titleSize;
-                
+
                 // Italics removed for title as requested
                 hCtx.font = `900 ${dynamicSize}px ${item.font.includes('monospace') ? 'monospace' : 'sans-serif'}`;
                 hCtx.fillStyle = 'white';
                 // Subtle static shadow or no reactive animation for the title
                 hCtx.shadowBlur = isTitle ? (dynamicSize / 8) : (dynamicSize / 4) * (bassIntensity * 0.5);
-                
+
                 const tx = anchorX;
 
                 // Letter Spacing Emulation for Subtitle
@@ -445,7 +445,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
                   fullTextWidth -= charSpacing;
 
                   let startX = tx;
-                  if (align === 'center') startX = tx - fullTextWidth/2;
+                  if (align === 'center') startX = tx - fullTextWidth / 2;
                   if (align === 'right') startX = tx - fullTextWidth;
 
                   chars.forEach(c => {
@@ -455,7 +455,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
                 } else {
                   hCtx.fillText(item.val!, tx, curY);
                 }
-                
+
                 curY += item.size + lineSpacing;
               });
             }
@@ -473,9 +473,9 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   }, [config, isPlaying]);
 
   const formatTime = (s: number) => {
-    const m = Math.floor(s/60);
-    const sec = Math.floor(s%60);
-    return `${m.toString()}:${sec.toString().padStart(2,'0')}`;
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m.toString()}:${sec.toString().padStart(2, '0')}`;
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -528,7 +528,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       };
       recorder.start();
       const progressLoop = () => {
-        compCtx.clearRect(0,0,compCanvas.width, compCanvas.height);
+        compCtx.clearRect(0, 0, compCanvas.width, compCanvas.height);
         compCtx.drawImage(canvas, 0, 0);
         compCtx.drawImage(hud, 0, 0);
         onRecordingProgress(audio.currentTime / audio.duration);
@@ -543,12 +543,12 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-contain z-0" />
       <canvas ref={hudCanvasRef} className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none" />
       <audio ref={audioRef} src={audioUrl || undefined} crossOrigin="anonymous" />
-      
+
       {audioUrl && !hasInteracted && !isRecording && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-[60]">
-           <button onClick={togglePlay} className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all">
-             <svg className="w-10 h-10 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-           </button>
+          <button onClick={togglePlay} className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all">
+            <svg className="w-10 h-10 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          </button>
         </div>
       )}
 
@@ -561,12 +561,12 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <button onClick={togglePlay} className="text-white hover:scale-110 transition-transform">
-                {isPlaying ? <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg> : <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>}
+                {isPlaying ? <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg> : <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>}
               </button>
               <div className="text-[13px] font-black tracking-widest tabular-nums uppercase">{formatTime(currentTime)} / {formatTime(duration)}</div>
             </div>
             <button onClick={toggleFullscreen} className="text-white hover:scale-110 transition-transform">
-              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" /></svg>
             </button>
           </div>
         </div>
