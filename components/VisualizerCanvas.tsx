@@ -30,6 +30,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const threeRef = useRef<{
     scene: THREE.Scene;
@@ -126,7 +127,10 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
       bgPoints: null
     };
 
+    setIsInitialized(true);
+
     return () => {
+      setIsInitialized(false);
       renderer.dispose();
       audioContext.close();
     };
@@ -244,7 +248,7 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
     }
 
     scene.background = new THREE.Color(0x000000);
-  }, [config.foregroundStyle, config.backgroundStyle, config.complexity, config.color, config.colorSecondary]);
+  }, [isInitialized, audioUrl, config.foregroundStyle, config.backgroundStyle, config.complexity, config.color, config.colorSecondary]);
 
   useEffect(() => {
     if (!threeRef.current) return;

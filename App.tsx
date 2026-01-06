@@ -34,12 +34,23 @@ const App: React.FC = () => {
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingProgress, setRecordingProgress] = useState(0);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleAudioSelect = (file: File) => {
     const url = URL.createObjectURL(file);
     setState({ file, audioUrl: url, isPlaying: false });
+  };
+
+  const handleLoadSample = async () => {
+    try {
+      const response = await fetch('/sample.mp3');
+      const blob = await response.blob();
+      const file = new File([blob], 'Retro Alley Drift.mp3', { type: 'audio/mpeg' });
+      handleAudioSelect(file);
+    } catch (error) {
+      console.error('Error loading sample audio:', error);
+    }
   };
 
   const handleReset = () => {
@@ -65,13 +76,13 @@ const App: React.FC = () => {
         </h1>
         {isReady && !isRecording && (
           <div className="flex items-center gap-4 pointer-events-auto">
-            <button 
+            <button
               onClick={() => setIsRecording(true)}
               className="px-8 py-3 bg-red-600 border border-red-500 rounded-full text-[11px] font-black uppercase tracking-[0.25em] shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:bg-red-500 hover:scale-105 transition-all active:scale-95"
             >
               Master Export
             </button>
-            <button 
+            <button
               onClick={handleReset}
               className="px-8 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[11px] font-black uppercase tracking-[0.25em] hover:bg-white hover:text-black transition-all active:scale-95"
             >
@@ -84,24 +95,44 @@ const App: React.FC = () => {
       <main className={`w-full max-w-[1800px] pt-24 transition-all duration-1000 ease-in-out ${isReady ? 'grid grid-cols-1 lg:grid-cols-12 gap-12 items-start' : 'flex items-center justify-center min-h-[80vh]'}`}>
         {/* Visualizer Container */}
         <div className={`${isReady ? 'lg:col-span-8' : 'w-full max-w-5xl'} aspect-video relative rounded-[2.5rem] overflow-hidden bg-black shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5 group ring-1 ring-white/10`}>
-          <VisualizerCanvas 
-            audioUrl={state.audioUrl} 
-            config={config} 
-            isRecording={isRecording} 
-            onRecordingComplete={() => setIsRecording(false)} 
-            onRecordingProgress={setRecordingProgress} 
-            isPlaying={state.isPlaying} 
-            ref={audioRef} 
+          <VisualizerCanvas
+            audioUrl={state.audioUrl}
+            config={config}
+            isRecording={isRecording}
+            onRecordingComplete={() => setIsRecording(false)}
+            onRecordingProgress={setRecordingProgress}
+            isPlaying={state.isPlaying}
+            ref={audioRef}
           />
-          
+
           {!isReady && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 z-10 p-10 backdrop-blur-sm">
               <div className="flex flex-col items-center justify-center max-w-3xl w-full text-center">
                 <div className="text-[10px] font-black tracking-[0.8em] text-red-500 mb-6 uppercase">Initialize Engine</div>
                 <h2 className="text-[80px] font-black mb-16 uppercase tracking-[-0.04em] leading-[0.85] text-white">
-                  PROFESSIONAL<br/><span className="text-white/20">AUDIO RENDERER</span>
+                  PROFESSIONAL<br /><span className="text-white/20">AUDIO RENDERER</span>
                 </h2>
-                <AudioUpload onFileSelect={handleAudioSelect} />
+                <div className="flex flex-col items-center gap-8">
+                  <AudioUpload onFileSelect={handleAudioSelect} />
+
+                  <div className="flex items-center gap-4 w-full max-w-[200px]">
+                    <div className="h-[1px] flex-1 bg-white/5" />
+                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">OR</span>
+                    <div className="h-[1px] flex-1 bg-white/5" />
+                  </div>
+
+                  <button
+                    onClick={handleLoadSample}
+                    className="bg-[#15151b] border border-[#2a2a3a] rounded-xl px-12 py-5 flex items-center gap-4 hover:bg-[#1c1c25] hover:border-red-500/50 transition-all cursor-pointer group shadow-2xl"
+                  >
+                    <div className="w-5 h-5 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-red-500 group-hover:scale-125 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <span className="font-bold text-base uppercase tracking-widest text-white/90">Load Sample Music</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -124,7 +155,7 @@ const App: React.FC = () => {
         {isReady && (
           <div className="lg:col-span-4 space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-4 custom-scrollbar pb-20 animate-in slide-in-from-right duration-700">
             <div className="bg-[#080808]/90 backdrop-blur-3xl border border-white/5 p-10 rounded-[3rem] space-y-16 shadow-2xl ring-1 ring-white/5">
-              
+
               {/* STYLE SELECTION */}
               <div className="space-y-12">
                 <section>
@@ -137,14 +168,13 @@ const App: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     {Object.values(ForegroundStyle).map(s => (
-                      <button 
-                        key={s} 
-                        onClick={() => setConfig(p => ({ ...p, foregroundStyle: s }))} 
-                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-2xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${
-                          config.foregroundStyle === s 
-                            ? 'bg-red-600 text-white shadow-[0_15px_40px_rgba(220,38,38,0.4)] scale-105 z-10' 
-                            : 'bg-[#121212] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
-                        }`}
+                      <button
+                        key={s}
+                        onClick={() => setConfig(p => ({ ...p, foregroundStyle: s }))}
+                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-2xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${config.foregroundStyle === s
+                          ? 'bg-red-600 text-white shadow-[0_15px_40px_rgba(220,38,38,0.4)] scale-105 z-10'
+                          : 'bg-[#121212] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
+                          }`}
                       >
                         <span className="leading-[1.1]">
                           {s.split(/[\s-]+/).map((word, i) => (
@@ -166,14 +196,13 @@ const App: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     {Object.values(BackgroundStyle).map(s => (
-                      <button 
-                        key={s} 
-                        onClick={() => setConfig(p => ({ ...p, backgroundStyle: s }))} 
-                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-2xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${
-                          config.backgroundStyle === s 
-                            ? 'bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] scale-105 z-10' 
-                            : 'bg-[#121212] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
-                        }`}
+                      <button
+                        key={s}
+                        onClick={() => setConfig(p => ({ ...p, backgroundStyle: s }))}
+                        className={`aspect-square flex flex-col items-center justify-center text-center p-2 rounded-2xl text-[8px] font-black uppercase tracking-tighter transition-all active:scale-90 ${config.backgroundStyle === s
+                          ? 'bg-blue-600 text-white shadow-[0_15px_40px_rgba(37,99,235,0.4)] scale-105 z-10'
+                          : 'bg-[#121212] text-neutral-500 border border-white/5 hover:text-white hover:border-white/20'
+                          }`}
                       >
                         <span className="leading-[1.1]">
                           {s.split(' ').map((word, i) => (
@@ -193,7 +222,7 @@ const App: React.FC = () => {
                     <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic mb-1">HUD SYSTEM</h3>
                     <p className="text-[9px] text-neutral-500 font-medium uppercase tracking-widest">Text Overlay & Data</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setConfig(p => ({ ...p, showTimer: !p.showTimer }))}
                     className={`text-[10px] font-bold px-4 py-1.5 rounded-full border-2 transition-all ${config.showTimer ? 'border-red-600 text-red-600 shadow-[0_0_15px_rgba(220,38,38,0.2)]' : 'border-neutral-800 text-neutral-700'}`}
                   >
@@ -206,8 +235,8 @@ const App: React.FC = () => {
                     <div className="space-y-5">
                       <div className="space-y-3">
                         <label className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-400">Master Identifier</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={config.title}
                           onChange={(e) => setConfig(p => ({ ...p, title: e.target.value }))}
                           placeholder="TITLE"
@@ -216,8 +245,8 @@ const App: React.FC = () => {
                       </div>
                       <div className="space-y-3">
                         <label className="text-[9px] font-black uppercase tracking-[0.3em] text-neutral-400">Sub-Metadata</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={config.subtitle}
                           onChange={(e) => setConfig(p => ({ ...p, subtitle: e.target.value }))}
                           placeholder="SUBTITLE"
@@ -232,9 +261,9 @@ const App: React.FC = () => {
                           <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Title Pt</label>
                           <span className="text-[9px] font-mono text-white/40">{config.titleSize}</span>
                         </div>
-                        <input 
-                          type="range" min="50" max="600" step="10" 
-                          value={config.titleSize} 
+                        <input
+                          type="range" min="50" max="600" step="10"
+                          value={config.titleSize}
                           onChange={(e) => setConfig(p => ({ ...p, titleSize: parseInt(e.target.value) }))}
                           className="w-full h-1 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-red-600"
                         />
@@ -244,9 +273,9 @@ const App: React.FC = () => {
                           <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Timer Pt</label>
                           <span className="text-[9px] font-mono text-white/40">{config.timerSize}</span>
                         </div>
-                        <input 
-                          type="range" min="50" max="400" step="10" 
-                          value={config.timerSize} 
+                        <input
+                          type="range" min="50" max="400" step="10"
+                          value={config.timerSize}
                           onChange={(e) => setConfig(p => ({ ...p, timerSize: parseInt(e.target.value) }))}
                           className="w-full h-1 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-white"
                         />
@@ -261,11 +290,10 @@ const App: React.FC = () => {
                             <button
                               key={loc}
                               onClick={() => setConfig(p => ({ ...p, timerLocation: loc }))}
-                              className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                                config.timerLocation === loc 
-                                  ? 'bg-red-600 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
-                                  : 'bg-neutral-900 border-transparent hover:border-white/20'
-                              }`}
+                              className={`w-10 h-10 rounded-lg border-2 transition-all ${config.timerLocation === loc
+                                ? 'bg-red-600 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.5)]'
+                                : 'bg-neutral-900 border-transparent hover:border-white/20'
+                                }`}
                               title={loc}
                             />
                           ))}
@@ -279,21 +307,21 @@ const App: React.FC = () => {
               {/* RENDER ENGINE CONTROLS */}
               <section className="space-y-10 pt-10 border-t border-white/5">
                 <div className="flex justify-between items-end">
-                   <div>
+                  <div>
                     <h3 className="text-[12px] font-black text-white uppercase tracking-[0.4em] italic mb-1">PHYSICS ENGINE</h3>
                     <p className="text-[9px] text-neutral-500 font-medium uppercase tracking-widest">Real-time Modulation</p>
                   </div>
                   <span className="text-[9px] font-mono text-neutral-600 uppercase">GPU_MASTER</span>
                 </div>
-                
+
                 <div className="space-y-8">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Primary Color</label>
                       <div className="flex items-center gap-3 bg-[#121212] p-3 rounded-xl border border-white/5 focus-within:border-white/20 transition-all">
-                        <input 
-                          type="color" 
-                          value={config.color} 
+                        <input
+                          type="color"
+                          value={config.color}
                           onChange={(e) => setConfig(p => ({ ...p, color: e.target.value }))}
                           className="w-full h-6 bg-transparent border-none cursor-pointer rounded-md overflow-hidden"
                         />
@@ -302,9 +330,9 @@ const App: React.FC = () => {
                     <div className="space-y-3">
                       <label className="text-[9px] font-black uppercase tracking-widest text-neutral-500">Accent Color</label>
                       <div className="flex items-center gap-3 bg-[#121212] p-3 rounded-xl border border-white/5 focus-within:border-white/20 transition-all">
-                        <input 
-                          type="color" 
-                          value={config.colorSecondary} 
+                        <input
+                          type="color"
+                          value={config.colorSecondary}
                           onChange={(e) => setConfig(p => ({ ...p, colorSecondary: e.target.value }))}
                           className="w-full h-6 bg-transparent border-none cursor-pointer rounded-md overflow-hidden"
                         />
@@ -326,9 +354,9 @@ const App: React.FC = () => {
                           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">{ctrl.label}</label>
                           <span className="text-[10px] font-mono text-white/50">{(config as any)[ctrl.key]}{ctrl.unit}</span>
                         </div>
-                        <input 
+                        <input
                           type="range" min={ctrl.min} max={ctrl.max} step={ctrl.step}
-                          value={(config as any)[ctrl.key]} 
+                          value={(config as any)[ctrl.key]}
                           onChange={(e) => setConfig(p => ({ ...p, [ctrl.key]: parseFloat(e.target.value) }))}
                           className={`w-full h-1 bg-neutral-900 rounded-full appearance-none cursor-pointer ${ctrl.color} transition-all`}
                         />
