@@ -505,23 +505,43 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
   };
 
   useEffect(() => {
+    let recorder: MediaRecorder | null = null;
+    let isActive = true;
+
     if (isRecording && canvasRef.current && hudCanvasRef.current && audioRef.current && audioUrl) {
       const audio = audioRef.current;
       const canvas = canvasRef.current;
       const hud = hudCanvasRef.current;
+
       const compCanvas = document.createElement('canvas');
       compCanvas.width = canvas.width;
       compCanvas.height = canvas.height;
       const compCtx = compCanvas.getContext('2d')!;
+
       audio.currentTime = 0;
       audio.play();
+
       const stream = compCanvas.captureStream(60);
       const audioStream = (audio as any).captureStream ? (audio as any).captureStream() : null;
-      const combined = new MediaStream([...stream.getTracks(), ...(audioStream ? audioStream.getAudioTracks() : [])]);
-      const recorder = new MediaRecorder(combined, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 100000000 });
+      const combined = new MediaStream([
+        ...stream.getTracks(),
+        ...(audioStream ? audioStream.getAudioTracks() : [])
+      ]);
+
+      // Reduced bitrate for stability: 50Mbps instead of 100Mbps
+      recorder = new MediaRecorder(combined, {
+        mimeType: 'video/webm;codecs=vp9',
+        videoBitsPerSecond: 50000000
+      });
+
       const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
       recorder.onstop = () => {
+        if (!isActive) return; // Don't download if cancelled
+
         const blob = new Blob(chunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -530,16 +550,39 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         a.click();
         onRecordingComplete();
       };
+
       recorder.start();
+
       const progressLoop = () => {
+        if (!isActive) {
+          if (recorder && recorder.state !== 'inactive') recorder.stop();
+          audio.pause();
+          return;
+        }
+
         compCtx.clearRect(0, 0, compCanvas.width, compCanvas.height);
         compCtx.drawImage(canvas, 0, 0);
         compCtx.drawImage(hud, 0, 0);
-        onRecordingProgress(audio.currentTime / audio.duration);
-        if (audio.ended) recorder.stop(); else if (isRecording) requestAnimationFrame(progressLoop);
+
+        const progress = audio.duration ? (audio.currentTime / audio.duration) : 0;
+        onRecordingProgress(progress);
+
+        if (audio.ended) {
+          recorder.stop();
+        } else if (isRecording) {
+          requestAnimationFrame(progressLoop);
+        }
       };
+
       progressLoop();
     }
+
+    return () => {
+      isActive = false;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+    };
   }, [isRecording, audioUrl]);
 
   return (
@@ -556,23 +599,65 @@ const VisualizerCanvas = forwardRef<HTMLAudioElement, Props>(({
         </div>
       )}
 
-      {audioUrl && !isRecording && (
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
-          <div className="relative w-full h-1.5 bg-white/10 rounded-full overflow-hidden mb-6">
-            <input type="range" min={0} max={duration || 0} value={currentTime} onChange={handleSeek} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-            <div className="h-full bg-red-600" style={{ width: `${(currentTime / duration) * 100}%` }} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button onClick={togglePlay} className="text-white hover:scale-110 transition-transform">
-                {isPlaying ? <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg> : <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>}
-              </button>
-              <div className="text-[13px] font-black tracking-widest tabular-nums uppercase">{formatTime(currentTime)} / {formatTime(duration)}</div>
+      {audioUrl && (
+        <div className={`absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/98 via-black/80 to-transparent p-10 transition-all duration-700 z-50 ${isRecording ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0'}`}>
+          {!isRecording ? (
+            <>
+              <div className="relative w-full h-1.5 bg-white/5 rounded-full overflow-hidden mb-8 group/progress">
+                <input type="range" min={0} max={duration || 0} value={currentTime} onChange={handleSeek} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <div className="h-full bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] transition-all duration-300" style={{ width: `${(currentTime / duration) * 100}%` }} />
+                <div className="absolute top-0 left-0 h-full w-full bg-white/10 opacity-0 group-hover/progress:opacity-100 transition-opacity pointer-events-none" />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-8">
+                  <button onClick={togglePlay} className="text-white hover:scale-110 active:scale-90 transition-all filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+                    {isPlaying ? (
+                      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                    ) : (
+                      <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                    )}
+                  </button>
+                  <div className="flex flex-col">
+                    <span className="text-[13px] font-black tracking-[0.2em] tabular-nums text-white/90">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                    <span className="text-[8px] font-black text-white/30 tracking-[0.3em] uppercase">Playback Engine</span>
+                  </div>
+                </div>
+                <button onClick={toggleFullscreen} className="text-white/40 hover:text-white hover:scale-110 active:scale-95 transition-all">
+                  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" /></svg>
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-1000">
+              <div className="flex items-center gap-10">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-4 h-4 bg-red-600 rounded-full animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.9)]" />
+                    <div className="absolute inset-0 w-4 h-4 bg-red-600 rounded-full animate-ping opacity-20" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[14px] font-black tracking-[0.3em] text-red-600 uppercase italic leading-none">REC</span>
+                    <span className="text-[8px] font-black text-red-600/40 tracking-[0.1em] uppercase">Master active</span>
+                  </div>
+                </div>
+
+                <div className="h-10 w-[1px] bg-white/10" />
+
+                <div className="flex flex-col gap-1">
+                  <p className="text-[10px] font-bold text-white/40 leading-none uppercase tracking-widest max-w-lg">
+                    Live recording in progress. All real-time adjustments are being rendered to the final master stream.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end">
+                <span className="text-[24px] font-black tracking-tighter tabular-nums leading-none">
+                  {Math.round((currentTime / (duration || 1)) * 100)}%
+                </span>
+                <span className="text-[8px] font-black text-white/30 tracking-[0.2em] uppercase">Encoded</span>
+              </div>
             </div>
-            <button onClick={toggleFullscreen} className="text-white hover:scale-110 transition-transform">
-              <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" /></svg>
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>

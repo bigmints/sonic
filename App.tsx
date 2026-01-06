@@ -68,26 +68,64 @@ const App: React.FC = () => {
 
   const isReady = !!state.audioUrl;
 
+
   return (
     <div className="min-h-screen bg-[#020202] text-white flex flex-col items-center justify-center p-4 font-sans overflow-hidden">
-      <header className="fixed top-0 w-full p-10 flex justify-between items-start z-50 pointer-events-none">
-        <h1 className="text-2xl font-black tracking-[-0.05em] uppercase pointer-events-auto cursor-default">
+      <header className="fixed top-0 w-full p-10 flex justify-between items-center z-50">
+        <h1 className="text-2xl font-black tracking-[-0.05em] uppercase cursor-default">
           SONIC<span className="text-red-600">VISION</span> <span className="text-[10px] tracking-[0.3em] font-medium opacity-50 ml-2">PRO MASTER</span>
         </h1>
-        {isReady && !isRecording && (
-          <div className="flex items-center gap-4 pointer-events-auto">
-            <button
-              onClick={() => setIsRecording(true)}
-              className="px-8 py-3 bg-red-600 border border-red-500 rounded-full text-[11px] font-black uppercase tracking-[0.25em] shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:bg-red-500 hover:scale-105 transition-all active:scale-95"
-            >
-              Master Export
-            </button>
-            <button
-              onClick={handleReset}
-              className="px-8 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[11px] font-black uppercase tracking-[0.25em] hover:bg-white hover:text-black transition-all active:scale-95"
-            >
-              New Project
-            </button>
+
+        {isReady && (
+          <div className="flex items-center gap-6">
+            {!isRecording ? (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsRecording(true)}
+                  className="px-8 py-3 bg-red-600 border border-red-500 rounded-full text-[11px] font-black uppercase tracking-[0.25em] shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:bg-red-500 hover:scale-105 transition-all active:scale-95 pointer-events-auto"
+                >
+                  Master Export
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="px-8 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full text-[11px] font-black uppercase tracking-[0.25em] hover:bg-white hover:text-black transition-all active:scale-95 pointer-events-auto"
+                >
+                  New Project
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-8 px-8 py-4 bg-black/40 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] min-w-[340px] animate-in slide-in-from-top-4 duration-500 pointer-events-auto">
+                <div className="flex items-center gap-3">
+                  <div className="w-2.5 h-2.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black tracking-[0.1em] text-white/90">LIVE RECORDING</span>
+                    <span className="text-[9px] font-mono text-white/40 uppercase">System Active</span>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[14px] font-black tracking-tighter tabular-nums">{Math.round(recordingProgress * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                    <div
+                      className="bg-red-600 h-full shadow-[0_0_10px_rgba(220,38,38,0.5)]"
+                      style={{ width: `${recordingProgress * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsRecording(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-red-600/20 hover:border-red-600/50 hover:text-red-500 transition-all active:scale-90 group"
+                  title="Cancel Export"
+                >
+                  <svg className="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </header>
@@ -133,19 +171,6 @@ const App: React.FC = () => {
                     <span className="font-bold text-base uppercase tracking-widest text-white/90">Load Sample Music</span>
                   </button>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {isRecording && (
-            <div className="absolute inset-0 bg-black/98 backdrop-blur-3xl z-50 flex items-center justify-center p-12">
-              <div className="w-full max-w-sm text-center">
-                <h3 className="text-[10px] font-black tracking-[0.5em] mb-16 text-red-600 uppercase italic">Encoding High Fidelity Stream</h3>
-                <div className="text-[140px] font-black text-white mb-8 tracking-tighter leading-none">{Math.round(recordingProgress * 100)}<span className="text-2xl text-neutral-700 ml-2">%</span></div>
-                <div className="w-full bg-neutral-900 h-1.5 rounded-full overflow-hidden mb-4">
-                  <div className="bg-red-600 h-full transition-all duration-300 shadow-[0_0_15px_rgba(220,38,38,0.8)]" style={{ width: `${recordingProgress * 100}%` }} />
-                </div>
-                <div className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">Do not close window until process finishes</div>
               </div>
             </div>
           )}
